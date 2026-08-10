@@ -1,0 +1,192 @@
+# ============================================================
+# Python
+# ============================================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+
+# ============================================================
+# Virtual Environments
+# ============================================================
+
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+
+# ============================================================
+# Environment Variables / Secrets
+# ============================================================
+
+.env
+.env.*
+!.env.example
+
+
+# ============================================================
+# Python Packaging / Distribution
+# ============================================================
+
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+
+# ============================================================
+# Testing / Coverage
+# ============================================================
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+
+# ============================================================
+# Jupyter Notebook
+# ============================================================
+
+.ipynb_checkpoints/
+
+
+# ============================================================
+# OS Generated Files
+# ============================================================
+
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+
+# ============================================================
+# Logs
+# ============================================================
+
+logs/
+*.log
+
+
+# ============================================================
+# Datasets
+# ============================================================
+
+# Raw / large datasets
+data/raw/*.csv
+data/raw/*.parquet
+data/raw/*.json
+
+# Processed datasets
+data/processed/*.csv
+data/processed/*.parquet
+data/processed/*.json
+
+# Intermediate datasets
+data/interim/*.csv
+data/interim/*.parquet
+data/interim/*.json
+
+# Project-level datasets
+Loan_Default.csv
+loan_data.csv
+test_processed.csv
+train_processed.csv
+
+
+# ============================================================
+# Keep DVC placeholder files
+# ============================================================
+
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/interim/.gitkeep
+
+
+# ============================================================
+# ML Models
+# ============================================================
+
+# Actual model files are managed by DVC
+models/*.joblib
+models/*.pkl
+models/*.pickle
+models/*.h5
+models/*.keras
+models/*.pt
+models/*.pth
+
+# Keep placeholder
+!models/.gitkeep
+
+
+# ============================================================
+# DVC
+# ============================================================
+
+# IMPORTANT:
+# Do NOT ignore .dvc/
+# Do NOT ignore *.dvc
+#
+# Git must track DVC metadata.
+
+
+# ============================================================
+# Docker
+# ============================================================
+
+# Docker local override files
+docker-compose.override.yml
+
+
+# ============================================================
+# Streamlit
+# ============================================================
+
+.streamlit/secrets.toml
+
+
+# ============================================================
+# IDE / Editor
+# ============================================================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+
+# ============================================================
+# Temporary / Backup Files
+# ============================================================
+
+*.tmp
+*.temp
+*.bak
+*.backup
+*~

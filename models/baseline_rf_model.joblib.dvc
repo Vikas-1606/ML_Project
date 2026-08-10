@@ -1,0 +1,6 @@
+outs:
+- md5: ee132fddd5151182de3f32f0fe5a209a
+  size: 13859737
+  isexec: true
+  hash: md5
+  path: baseline_rf_model.joblib
