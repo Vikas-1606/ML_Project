@@ -31,23 +31,24 @@ jobs:
           pip install -r requirements.txt
           pip install pytest ruff dvc-gdrive
 
-      # 4. Restore DVC Google Drive OAuth credential
-      - name: Restore DVC Google Drive Credential
+        # 4. Configure DVC Google Drive authentication
+      - name: Configure DVC Google Drive
         env:
           DVC_GOOGLE_TOKEN: ${{ secrets.DVC_GOOGLE_TOKEN }}
+          DVC_GOOGLE_CLIENT_ID: ${{ secrets.DVC_GOOGLE_CLIENT_ID }}
+          DVC_GOOGLE_CLIENT_SECRET: ${{ secrets.DVC_GOOGLE_CLIENT_SECRET }}
         run: |
-          mkdir -p ~/.cache/pydrive2fs
-          echo "$DVC_GOOGLE_TOKEN" | base64 -d > /tmp/dvc_google_token.json
+          mkdir -p "$HOME/.cache/pydrive2fs/${DVC_GOOGLE_CLIENT_ID}"
 
-          CLIENT_ID=$(python -c "import json; print(json.load(open('/tmp/dvc_google_token.json'))['client_id'])")
-
-          mkdir -p "$HOME/.cache/pydrive2fs/${CLIENT_ID}"
-
-          cp /tmp/dvc_google_token.json \
-            "$HOME/.cache/pydrive2fs/${CLIENT_ID}/default.json"
+          echo "$DVC_GOOGLE_TOKEN" | base64 -d \
+            > "$HOME/.cache/pydrive2fs/${DVC_GOOGLE_CLIENT_ID}/default.json"
 
           chmod 600 \
-            "$HOME/.cache/pydrive2fs/${CLIENT_ID}/default.json"
+            "$HOME/.cache/pydrive2fs/${DVC_GOOGLE_CLIENT_ID}/default.json"
+
+          dvc remote modify --local gdrive gdrive_client_id "$DVC_GOOGLE_CLIENT_ID"
+
+          dvc remote modify --local gdrive gdrive_client_secret "$DVC_GOOGLE_CLIENT_SECRET"
 
       # 5. Pull DVC data
       - name: Pull DVC Data
