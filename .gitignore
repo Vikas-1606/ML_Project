@@ -190,3 +190,4 @@ docker-compose.override.yml
 *.bak
 *.backup
 *~client_secrets.json
+*.env

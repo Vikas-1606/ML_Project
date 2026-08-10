@@ -7,37 +7,61 @@ on:
   pull_request:
     branches: [main, master]
 
+
 jobs:
+
+  # ==========================================================
+  # 1. BUILD + TEST + DOCKER BUILD + PUSH
+  # ==========================================================
+
   build-and-test:
+
     runs-on: ubuntu-latest
 
     steps:
 
+      # ------------------------------------------------------
       # 1. Checkout repository
+      # ------------------------------------------------------
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
+
+      # ------------------------------------------------------
       # 2. Setup Python
+      # ------------------------------------------------------
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
+
+      # ------------------------------------------------------
       # 3. Install dependencies
+      # ------------------------------------------------------
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest ruff dvc-gdrive
 
-        # 4. Configure DVC Google Drive authentication
+
+      # ------------------------------------------------------
+      # 4. Configure DVC Google Drive authentication
+      # ------------------------------------------------------
+
       - name: Configure DVC Google Drive
         env:
           DVC_GOOGLE_TOKEN: ${{ secrets.DVC_GOOGLE_TOKEN }}
           DVC_GOOGLE_CLIENT_ID: ${{ secrets.DVC_GOOGLE_CLIENT_ID }}
           DVC_GOOGLE_CLIENT_SECRET: ${{ secrets.DVC_GOOGLE_CLIENT_SECRET }}
+
         run: |
+
           mkdir -p "$HOME/.cache/pydrive2fs/${DVC_GOOGLE_CLIENT_ID}"
 
           echo "$DVC_GOOGLE_TOKEN" | base64 -d \
@@ -46,51 +70,157 @@ jobs:
           chmod 600 \
             "$HOME/.cache/pydrive2fs/${DVC_GOOGLE_CLIENT_ID}/default.json"
 
-          dvc remote modify --local gdrive gdrive_client_id "$DVC_GOOGLE_CLIENT_ID"
+          dvc remote modify --local gdrive \
+            gdrive_client_id "$DVC_GOOGLE_CLIENT_ID"
 
-          dvc remote modify --local gdrive gdrive_client_secret "$DVC_GOOGLE_CLIENT_SECRET"
+          dvc remote modify --local gdrive \
+            gdrive_client_secret "$DVC_GOOGLE_CLIENT_SECRET"
 
-      # 5. Pull DVC data
+
+      # ------------------------------------------------------
+      # 5. Pull DVC Data
+      # ------------------------------------------------------
+
       - name: Pull DVC Data
         run: |
           dvc pull -v
 
-      # 6. Verify dataset
+
+      # ------------------------------------------------------
+      # 6. Verify Dataset
+      # ------------------------------------------------------
+
       - name: Verify Dataset
         run: |
           ls -lh data/raw/Loan_Default.csv
 
+
+      # ------------------------------------------------------
       # 7. Lint
+      # ------------------------------------------------------
+
       - name: Lint Code with Ruff
         run: |
           ruff check src/ tests/
 
-      # 8. Run tests
+
+      # ------------------------------------------------------
+      # 8. Run Tests
+      # ------------------------------------------------------
+
       - name: Run Pytest
         run: |
           pytest tests/ -v
 
-      # 9. Build Docker image
+
+      # ------------------------------------------------------
+      # 9. Build Docker Image
+      # ------------------------------------------------------
+
       - name: Build Docker Image
         run: |
+
           docker build \
             -t vikas61000/ml-eda-full-fledge:latest \
             -t vikas61000/ml-eda-full-fledge:${{ github.sha }} \
             .
 
+
+      # ------------------------------------------------------
       # 10. Login to Docker Hub
+      # ------------------------------------------------------
+
       - name: Login to Docker Hub
         uses: docker/login-action@v3
+
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 11. Push latest Docker image
+
+      # ------------------------------------------------------
+      # 11. Push latest image
+      # ------------------------------------------------------
+
       - name: Push Latest Docker Image
         run: |
           docker push vikas61000/ml-eda-full-fledge:latest
 
-      # 12. Push versioned Docker image
+
+      # ------------------------------------------------------
+      # 12. Push versioned image
+      # ------------------------------------------------------
+
       - name: Push Versioned Docker Image
         run: |
           docker push vikas61000/ml-eda-full-fledge:${{ github.sha }}
+
+
+  # ==========================================================
+  # 2. DEPLOY TO COMPUTE MACHINE
+  # ==========================================================
+
+  deploy:
+
+    needs: build-and-test
+
+    runs-on: ubuntu-latest
+
+    # Only deploy when code is actually pushed.
+    # Do not deploy for pull requests.
+
+    if: github.event_name == 'push'
+
+    steps:
+
+      # ------------------------------------------------------
+      # 13. Deploy using SSH
+      # ------------------------------------------------------
+
+      - name: Deploy to Compute Machine
+
+        uses: appleboy/ssh-action@v1.2.5
+
+        with:
+
+          host: ${{ secrets.SERVER_HOST }}
+
+          username: ${{ secrets.SERVER_USERNAME }}
+
+          key: ${{ secrets.SERVER_SSH_KEY }}
+
+          script: |
+
+            echo "======================================"
+            echo "Starting deployment"
+            echo "======================================"
+
+            cd ~/ml-project
+
+            echo "Updating IMAGE_TAG..."
+
+            echo "IMAGE_TAG=${{ github.sha }}" > .env
+
+            echo "Pulling new Docker image..."
+
+            docker compose pull
+
+            echo "Stopping old containers..."
+
+            docker compose down
+
+            echo "Starting new containers..."
+
+            docker compose up -d
+
+            echo "Removing unused Docker images..."
+
+            docker image prune -f
+
+            echo "======================================"
+            echo "Deployment completed"
+            echo "======================================"
+
+            echo "Running containers:"
+
+            docker compose ps

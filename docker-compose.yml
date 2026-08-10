@@ -1,10 +1,11 @@
 services:
 
   loan-default-api:
-    build: .
+    image: vikas61000/ml-eda-full-fledge:${IMAGE_TAG:-latest}
     container_name: loan-default-api
     ports:
       - "8000:8000"
+    restart: unless-stopped
     command:
       - uvicorn
       - src.api:app
@@ -14,10 +15,11 @@ services:
       - "8000"
 
   streamlit:
-    build: .
+    image: vikas61000/ml-eda-full-fledge:${IMAGE_TAG:-latest}
     container_name: loan-default-streamlit
     ports:
       - "8501:8501"
+    restart: unless-stopped
     depends_on:
       - loan-default-api
     command:
