@@ -29,19 +29,47 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest ruff
+          pip install pytest ruff dvc-gdrive
 
-      # 4. Lint
+      # 4. Restore DVC Google Drive OAuth credential
+      - name: Restore DVC Google Drive Credential
+        env:
+          DVC_GOOGLE_TOKEN: ${{ secrets.DVC_GOOGLE_TOKEN }}
+        run: |
+          mkdir -p ~/.cache/pydrive2fs
+          echo "$DVC_GOOGLE_TOKEN" | base64 -d > /tmp/dvc_google_token.json
+
+          CLIENT_ID=$(python -c "import json; print(json.load(open('/tmp/dvc_google_token.json'))['client_id'])")
+
+          mkdir -p "$HOME/.cache/pydrive2fs/${CLIENT_ID}"
+
+          cp /tmp/dvc_google_token.json \
+            "$HOME/.cache/pydrive2fs/${CLIENT_ID}/default.json"
+
+          chmod 600 \
+            "$HOME/.cache/pydrive2fs/${CLIENT_ID}/default.json"
+
+      # 5. Pull DVC data
+      - name: Pull DVC Data
+        run: |
+          dvc pull -v
+
+      # 6. Verify dataset
+      - name: Verify Dataset
+        run: |
+          ls -lh data/raw/Loan_Default.csv
+
+      # 7. Lint
       - name: Lint Code with Ruff
         run: |
           ruff check src/ tests/
 
-      # 5. Run tests
+      # 8. Run tests
       - name: Run Pytest
         run: |
           pytest tests/ -v
 
-      # 6. Build Docker image
+      # 9. Build Docker image
       - name: Build Docker Image
         run: |
           docker build \
@@ -49,19 +77,19 @@ jobs:
             -t vikas61000/ml-eda-full-fledge:${{ github.sha }} \
             .
 
-      # 7. Login to Docker Hub
+      # 10. Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 8. Push latest image
+      # 11. Push latest Docker image
       - name: Push Latest Docker Image
         run: |
           docker push vikas61000/ml-eda-full-fledge:latest
 
-      # 9. Push versioned image
+      # 12. Push versioned Docker image
       - name: Push Versioned Docker Image
         run: |
           docker push vikas61000/ml-eda-full-fledge:${{ github.sha }}
