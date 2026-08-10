@@ -1,6 +1,5 @@
-from src.modeling.predict import predict_default_probability
 from src.logger import get_logger
-
+from src.modeling.predict import predict_default_probability
 
 logger = get_logger(__name__)
 
